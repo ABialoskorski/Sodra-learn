@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Book } from "../../book";
+import { BookDetails } from "../BookDetails/BookDetails";
+import { useBooks } from "../../services/BooksService";
+
 import {
   Grid,
   TableContainer,
@@ -9,59 +13,67 @@ import {
   TableBody,
   Paper,
 } from "@mui/material";
-import { Book } from "../../book";
-import { BookDetails } from "../BookDetails/BookDetails";
 
 export const BookOverview = () => {
-  const [books, setBooks] = useState<Book[]>();
+  const { findAll } = useBooks();
+  const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   useEffect(() => {
-    const books = [
-      {
-        id: 1,
-        authors: "John Example",
-        title: "Example Book",
-      },
-      {
-        id: 2,
-        authors: "Joe Smith",
-        title: "Another Book",
-      },
-    ]
-
-    setBooks(books)
+    findAll().then((books: Book[]) => setBooks(books));
   }, []);
 
+  const isBookSelected = (book: Book): boolean => book === selectedBook;
+
+  const updateBook = (bookToUpdate: Book) => {
+    setBooks((prevBooks) =>
+        prevBooks.map((book) =>
+            book.id === bookToUpdate.id ? bookToUpdate : book,
+        ),
+    );
+    setSelectedBook(bookToUpdate);
+  };
+
   return (
-    <Grid container spacing={2}>
-      <Grid item md={8}>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>id</TableCell>
-                <TableCell>Authors</TableCell>
-                <TableCell>Title</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {books?.map((book) => (
-                <TableRow key={book.id} onClick={
-                  () => setSelectedBook(book)
-                }>
-                  <TableCell component="th" scope="row">
-                    {book.id}
-                  </TableCell>
-                  <TableCell>{book.authors}</TableCell>
-                  <TableCell>{book.title}</TableCell>
+      <Grid container spacing={2}>
+        <Grid item md={8}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>#</TableCell>
+                  <TableCell>Authors</TableCell>
+                  <TableCell>Title</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        {selectedBook ? <BookDetails book={selectedBook} /> : null}
+              </TableHead>
+              <TableBody>
+                {books.map((book, index) => (
+                    <TableRow
+                        hover
+                        key={book.id}
+                        onClick={() => setSelectedBook(book)}
+                        selected={isBookSelected(book)}
+                    >
+                      <TableCell component="th" scope="row">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>{book.authors}</TableCell>
+                      <TableCell>{book.title}</TableCell>
+                    </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Grid>
+        <Grid item md={4}>
+          {selectedBook && (
+              <BookDetails
+                  key={selectedBook.id}
+                  book={selectedBook}
+                  onBookChange={updateBook}
+              />
+          )}
+        </Grid>
       </Grid>
-    </Grid>
   );
 };

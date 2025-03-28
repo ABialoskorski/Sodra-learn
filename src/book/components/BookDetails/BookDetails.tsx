@@ -1,19 +1,71 @@
+import { useState, ChangeEvent, SyntheticEvent, useEffect } from "react";
 import { Book } from "../../book";
-import { Card, CardContent, Typography, FormLabel } from "@mui/material";
+import { Stack, Button, Card, CardContent, TextField } from "@mui/material";
+import { useBooks } from "../../services/BooksService";
 
 export interface Props {
-  book: Book;
+    book: Book;
+    onBookChange: (book: Book) => void;
 }
 
-export const BookDetails = (props: Props) => (
-  <Card>
-    <CardContent>
-      <FormLabel>Authors:</FormLabel>
-      <Typography>{props.book.authors}</Typography>
-    </CardContent>
-    <CardContent>
-      <FormLabel>Title:</FormLabel>
-      <Typography>{props.book.title}</Typography>
-    </CardContent>
-  </Card>
-);
+export const BookDetails = (props: Props) => {
+    const [book, setBook] = useState<Book>({
+        authors: "",
+        title: "",
+    } as Book);
+    const { findOne, save } = useBooks();
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { value, name } = e.currentTarget;
+        setBook((prevBook) => ({ ...prevBook, [name]: value }));
+    };
+
+    const notifyOnBookChange = (e: SyntheticEvent) => {
+        e.preventDefault();
+        save(book).then((savedBook) => {
+            props.onBookChange(savedBook);
+        });
+    };
+
+    useEffect(() => {
+        const id = props.book.id;
+
+        if (id) {
+            findOne(id).then((book) => {
+                setBook(book);
+            });
+        }
+    }, []);
+
+    return (
+        <Card>
+            <CardContent>
+                <form onSubmit={notifyOnBookChange}>
+                    <Stack spacing={4}>
+                        <TextField
+                            id="authors"
+                            name="authors"
+                            label="Authors"
+                            variant="outlined"
+                            fullWidth
+                            value={book.authors}
+                            onChange={handleChange}
+                        />
+                        <TextField
+                            id="title"
+                            name="title"
+                            label="Title"
+                            variant="outlined"
+                            fullWidth
+                            value={book.title}
+                            onChange={handleChange}
+                        />
+                        <Button variant="contained" type="submit" name="apply">
+                            Apply
+                        </Button>
+                    </Stack>
+                </form>
+            </CardContent>
+        </Card>
+    );
+};
